@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { sendMail } from "@/lib/email";
 
 // Email notification for order status updates
 export async function POST(request) {
@@ -87,11 +88,24 @@ export async function POST(request) {
             `;
         }
 
-        // Emails disabled: short-circuit with success
-        return NextResponse.json({ 
-            success: true, 
-            message: 'Order status email disabled' 
-        });
+        // Send the email using Nodemailer
+        try {
+            await sendMail({
+                to: email,
+                subject: emailSubject,
+                html: emailBody,
+            });
+            return NextResponse.json({ 
+                success: true, 
+                message: 'Order status email sent' 
+            });
+        } catch (err) {
+            console.error('Failed to send order status email:', err);
+            return NextResponse.json({ 
+                error: 'Failed to send order status email',
+                details: err.message
+            }, { status: 500 });
+        }
 
     } catch (error) {
         console.error('Email notification error:', error);
